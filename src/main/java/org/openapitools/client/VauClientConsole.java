@@ -2,15 +2,26 @@ package org.openapitools.client;
 
 import org.openapitools.client.api.*;
 import org.openapitools.client.model.*;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
+import org.springframework.http.HttpHeaders;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.Flow;
 
-public class Main {
+@Component
+public class VauClientConsole implements CommandLineRunner {
     private static final Scanner scanner = new Scanner(System.in);
     private static final ApiClient client = new ApiClient();
 
-    public static void main(String[] args) {
+    public void run(String[] args) {
         client.setBasePath("http://localhost:8080");
 
         while (true) {
@@ -20,6 +31,7 @@ public class Main {
             System.out.println("3. Subscription Inquiry");
             System.out.println("4. Subscription Delete");
             System.out.println("5. StopAdvices");
+            System.out.println("6. Search Updates");
             System.out.println("0. Exit");
             System.out.print("> ");
 
@@ -32,6 +44,7 @@ public class Main {
                     case "3" -> handleSubscriptionInquiry();
                     case "4" -> handleSubscriptionDelete();
                     case "5" -> handleStopAdvices();
+                    case "6" -> handleSearchAndApplyUpdate();
                     case "0" -> System.exit(0);
                     default -> System.out.println("Invalid choice.");
                 }
@@ -81,6 +94,10 @@ public class Main {
 
         System.out.print("Enter Merchant ID: ");
         String merchantId = scanner.nextLine().trim();
+        if (merchantId.length() != 12) {
+            System.out.println("❌ Merchant ID must be exactly 12 digits.");
+            return;
+        }
 
         System.out.print("Enter Sub-Merchant Name: ");
         String subMerchantName = scanner.nextLine().trim();
@@ -145,6 +162,73 @@ public class Main {
         }
     }
 
+    private static void handleSearchAndApplyUpdate() {
+        System.out.print("Enter PAN to search for updates: ");
+        String pan = scanner.nextLine().trim();
+
+        try {
+            Map<String, Object> pathParams = new HashMap<>();
+            MultiValueMap<String, String> queryParams = new LinkedMultiValueMap<>();
+            queryParams.add("pan", pan);
+
+            HttpHeaders headers = new HttpHeaders();
+            MultiValueMap<String, String> cookies = new LinkedMultiValueMap<>();
+            MultiValueMap<String, Object> formParams = new LinkedMultiValueMap<>();
+
+            List<MediaType> acceptList = List.of(MediaType.APPLICATION_JSON);
+            MediaType contentType = MediaType.APPLICATION_JSON;
+
+            ParameterizedTypeReference<Map<String, Object>> responseType =
+                    new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<Map<String, Object>> responseEntity = client.invokeAPI(
+                    "/vau/issuer-api/v1/search-update",     // 1
+                    HttpMethod.GET,                         // 2
+                    pathParams,                             // 3
+                    queryParams,                            // 4
+                    null,                                   // 5 body
+                    headers,                                // 6 headers
+                    cookies,                                // 7 cookies
+                    formParams,                             // 8 form params
+                    acceptList,                             // 9 Accept header
+                    contentType,                            // 10 Content-Type
+                    new String[] {},                        // 11 auth
+                    responseType                            // 12 return type
+            );
+
+            Map<String, Object> data = responseEntity.getBody();
+            if (data == null) {
+                System.out.println("❌ No response body received.");
+                return;
+            }
+
+            System.out.println("\n🔍 Search Result:");
+            System.out.println("PAN: " + data.get("pan"));
+            System.out.println("Old Expiry: " + data.get("oldExpiry"));
+
+            if (Boolean.TRUE.equals(data.get("updated"))) {
+                System.out.println("✅ Update Applied or Found:");
+                System.out.println("→ New PAN: " + data.get("newPan"));
+                System.out.println("→ New Expiry: " + data.get("newExpiry"));
+            } else {
+                System.out.println("ℹ️  No update applied: " + data.get("message"));
+            }
+
+        } catch (org.springframework.web.client.HttpClientErrorException.NotFound e) {
+            System.out.println("❌ PAN not found.");
+        } catch (Exception e) {
+            System.out.println("❌ Unexpected error:");
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+
+
+
     private static void handleSubscriptionDelete() {
         var api = new DefaultApi(client);
 
@@ -174,6 +258,42 @@ public class Main {
             e.printStackTrace();
         }
     }
+    private static void handleSearchUpdate() {
+        var api = new VisaAccountUpdaterSubscriptionApiApi(client);
+
+        System.out.print("Enter PAN to search for updates: ");
+        String pan = scanner.nextLine().trim();
+
+        try {
+            var response = api.subscriptionInquiryUsingPOST(
+                    new SubscriptionInquiryRequest()
+                            .merchantId("000000705853") // default mock ID or prompt if needed
+                            .subMerchantName("SUB-MERCHANT-NAME")
+                            .acquirerSegmentId(2)
+                            .subscriptions(Collections.singletonList(
+                                    new InquirySubscriptionAttributes().cardholderAccountNumber(pan)
+                            )),
+                    "application/json"
+            );
+
+            var entry = response.getSubscriptions().get(0);
+            System.out.println("\n🔍 Search Result:");
+            System.out.println("PAN: " + entry.getCardholderAccountNumber());
+            System.out.println("Status: " + entry.getSubscribedStatus());
+
+            if ("Reject".equalsIgnoreCase(entry.getSubscribedStatus())) {
+                System.out.println("❌ Reason: " + entry.getReject().getRejectReason());
+            } else {
+                Optional<Flow.Subscription> sub = // you would fetch it in the server, but not available here
+                        Optional.empty(); // ← not feasible on client directly unless you expose a GET endpoint
+                System.out.println("ℹ️  Updates applied will be shown in update response.");
+            }
+        } catch (Exception e) {
+            System.out.println("❌ Error during update search:");
+            e.printStackTrace();
+        }
+    }
+
 
     private static void handleStopAdvices() {
         var api = new IssuerStopAdviceApiApi(client);

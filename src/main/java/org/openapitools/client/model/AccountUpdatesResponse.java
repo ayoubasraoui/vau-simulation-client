@@ -30,7 +30,9 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
   AccountUpdatesResponse.JSON_PROPERTY_RESPONSE_CODE,
   AccountUpdatesResponse.JSON_PROPERTY_OLD_EXPIRATION_DATE,
   AccountUpdatesResponse.JSON_PROPERTY_OLD_CARDHOLDER_ACCOUNT_NUMBER,
-  AccountUpdatesResponse.JSON_PROPERTY_ACQUIRER_OR_MERCHANT_PROPRIETARY_INFO
+  AccountUpdatesResponse.JSON_PROPERTY_ACQUIRER_OR_MERCHANT_PROPRIETARY_INFO,
+  AccountUpdatesResponse.JSON_PROPERTY_NEW_EXPIRATION_DATE,
+  AccountUpdatesResponse.JSON_PROPERTY_NEW_CARDHOLDER_ACCOUNT_NUMBER,
 })
 @jakarta.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2025-04-29T11:09:21.433785600+01:00[Africa/Casablanca]", comments = "Generator version: 7.12.0")
 public class AccountUpdatesResponse {
@@ -49,6 +51,34 @@ public class AccountUpdatesResponse {
   public static final String JSON_PROPERTY_ACQUIRER_OR_MERCHANT_PROPRIETARY_INFO = "acquirerOrMerchantProprietaryInfo";
   @jakarta.annotation.Nullable
   private String acquirerOrMerchantProprietaryInfo;
+
+  public static final String JSON_PROPERTY_NEW_CARDHOLDER_ACCOUNT_NUMBER = "newCardholderAccountNumber";
+  private String newCardholderAccountNumber;
+
+  public static final String JSON_PROPERTY_NEW_EXPIRATION_DATE = "newExpirationDate";
+  private String newExpirationDate;
+
+  // Getter and Setter for newCardholderAccountNumber
+  @JsonProperty(JSON_PROPERTY_NEW_CARDHOLDER_ACCOUNT_NUMBER)
+  public String getNewCardholderAccountNumber() {
+    return newCardholderAccountNumber;
+  }
+
+  @JsonProperty(JSON_PROPERTY_NEW_CARDHOLDER_ACCOUNT_NUMBER)
+  public void setNewCardholderAccountNumber(String newCardholderAccountNumber) {
+    this.newCardholderAccountNumber = newCardholderAccountNumber;
+  }
+
+  // Getter and Setter for newExpirationDate
+  @JsonProperty(JSON_PROPERTY_NEW_EXPIRATION_DATE)
+  public String getNewExpirationDate() {
+    return newExpirationDate;
+  }
+
+  @JsonProperty(JSON_PROPERTY_NEW_EXPIRATION_DATE)
+  public void setNewExpirationDate(String newExpirationDate) {
+    this.newExpirationDate = newExpirationDate;
+  }
 
   public AccountUpdatesResponse() {
   }
